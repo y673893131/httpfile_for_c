@@ -1,1 +1,4 @@
 windows下httpfile client
+支持：
+1.断点续传
+2.流控
