@@ -40,6 +40,11 @@ private:
 #define DEFAULT_RECVPACK_SIZE 8096
 #define DEFAULT_REMOTE_PORT 80
 #define TIMER_DOWNLOAD 1
+#define NORMAL_CONNECT INTERNET_FLAG_KEEP_CONNECTION  
+#define SECURE_CONNECT NORMAL_CONNECT | INTERNET_FLAG_SECURE  
+#define NORMAL_REQUEST INTERNET_FLAG_RELOAD | INTERNET_FLAG_DONT_CACHE   
+#define SECURE_REQUEST NORMAL_REQUEST | INTERNET_FLAG_SECURE | INTERNET_FLAG_IGNORE_CERT_CN_INVALID  
+
 #define NEW_ARRAY_PTR(x,l) \
 	DELETE_ARRAY_PTR(x);*x = new char[l + 8];memset(*x,0x00,l+8);
 #define DELETE_PTR(x) \
@@ -139,6 +144,8 @@ private:
 	void UnInit();
 	void InitTimer();
 	void UnInitTimer();
+	void CheckSecure();
+
 private:
 	char m_szRemoteFile[MAX_PATH];
 	char m_szLocalFile[MAX_PATH];
@@ -163,5 +170,6 @@ private:
 	CHttpFile* m_pHF;							//http file
 	CFile* m_pF;								//local file
 	UINT m_nErrorCode;							//error code
+	BOOL m_bsecureFlag;							//http:FALSE,https:TRUE
 	static CHttpFileModule* s_instance;			//signal model
 };

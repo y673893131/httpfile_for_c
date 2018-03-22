@@ -24,6 +24,7 @@ CHttpFileModule::CHttpFileModule()
 	,m_pHF(NULL)
 	,m_pF(NULL)
 	,m_nErrorCode(ERROR_SUCCESS_DEFAULT)
+	,m_bsecureFlag(FALSE)
 {
 }
 
@@ -48,6 +49,7 @@ void CHttpFileModule::Init()
 {
 	m_bStop = FALSE;
 	SetErrorCode(ERROR_SUCCESS_DEFAULT);
+	CheckSecure();
 	m_hSemaphorePercent = ::CreateSemaphore(NULL, 0, 1024, NULL);
 	m_threadFun = m_nTransPortType == TRANSPORT_DOWNLOAD ? reinterpret_cast<LPTHREAD_START_ROUTINE>(DownloadThreadFunc)
 		: reinterpret_cast<LPTHREAD_START_ROUTINE>(UploadThreadFunc);
@@ -90,6 +92,15 @@ void CHttpFileModule::UnInit()
 	ReleaseHttpFile();
 	ReleaseSession();
 	ReleaseFile();
+}
+
+void CHttpFileModule::CheckSecure()
+{
+	CString szRemote(m_szRemoteFile);
+	if (!szRemote.Find("https://"))
+		m_bsecureFlag = TRUE;
+	else
+		m_bsecureFlag = FALSE;
 }
 
 bool CHttpFileModule::Start(char* pRemoteUrl,const char *pLocalPath)
@@ -537,9 +548,10 @@ CHttpFile* CHttpFileModule::GetHttpFile(const char* pStrArgs)
 {
 	if (!m_pHF)
 	{
+		DWORD dwFlag = INTERNET_FLAG_TRANSFER_BINARY|INTERNET_FLAG_DONT_CACHE|INTERNET_FLAG_PRAGMA_NOCACHE;
+		if (m_bsecureFlag) dwFlag |= INTERNET_FLAG_SECURE;
 		if (TRANSPORT_DOWNLOAD == GetTransportType())
 		{
-			DWORD dwFlag = INTERNET_FLAG_TRANSFER_BINARY|INTERNET_FLAG_DONT_CACHE|INTERNET_FLAG_PRAGMA_NOCACHE;
 			m_pHF = (CHttpFile*)GetSession(pStrArgs)->OpenURL(GetRemoteFile(),1,dwFlag,FormatDownloadHeader(),-1);
 		}
 		else
@@ -554,7 +566,7 @@ CHttpFile* CHttpFileModule::GetHttpFile(const char* pStrArgs)
 				return NULL;
 			}
 
-			m_pConn = GetSession(pStrArgs)->GetHttpConnection(szServer,nPort);
+			m_pConn = GetSession(pStrArgs)->GetHttpConnection(szServer,dwFlag,nPort);
 			if (m_pConn == NULL)
 			{
 				UnInit();
